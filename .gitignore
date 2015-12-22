@@ -1,0 +1,15 @@
+.project
+*.DS_Store
+*.idea
+node_modules
+npm-debug.log
+selenium-debug.log
+nodejs.cmd
+dist
+.tmp
+reports
+tmp
+undefined
+result_path
+
+received_file

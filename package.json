@@ -1,0 +1,22 @@
+{
+  "name": "pubnub-binary",
+  "version": "1.0.0",
+  "description": "A simple pubnub library allowing to send binary messages larger than 32KB",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/akrn/pubnub-binary.git"
+  },
+  "author": "Andrey D. Korin",
+  "bugs": {
+    "url": "https://github.com/akrn/pubnub-binary/issues"
+  },
+  "homepage": "https://github.com/akrn/pubnub-binary#readme",
+  "dependencies": {
+    "pubnub": "^3.7.18"
+  }
+}
