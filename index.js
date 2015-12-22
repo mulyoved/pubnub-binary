@@ -12,14 +12,13 @@ let pubSubSetup = {
 };
 // Create IPubSub object and wrap it with BinaryPubSub wrapper
 let pubsub = ipubsub_1.createPubSub(pubSubSetup, console, 'test123');
-pubsub = new binary_pubsub_1.BinaryPubSub(pubsub);
+pubsub = new binary_pubsub_1.BinaryPubSub(pubsub, binary_pubsub_1.BinaryPubSubMode.Object);
 setTimeout(() => {
     // Awaiting connection
     // Subscribing
     pubsub.subscribe((message) => {
-        // Message is actually a buffer
-        console.log('+MSG: Length: ', message.length);
-        fs.writeFileSync('./received_file', message);
+        // Message will be a buffer if BinaryPubSubMode is set to Buffer
+        fs.writeFileSync('./received_file', new Buffer(message.file, 'base64'));
         console.log('+MSG: Saved to ./received_file');
         // Unsubscribe
         pubsub.unsubscribe();
@@ -32,8 +31,11 @@ setTimeout(() => {
             process.exit(1);
         }
         console.log('Sending a file ', fileName);
-        let buffer = fs.readFileSync(fileName);
-        pubsub.publish(buffer)
+        let buffer = fs.readFileSync(fileName), message = {
+            key: 'value',
+            file: buffer.toString('base64')
+        };
+        pubsub.publish(message)
             .then(() => console.log('Message sent'))
             .catch((e) => console.log('Error sending message: ', e));
     }, 1000);

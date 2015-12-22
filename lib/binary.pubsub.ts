@@ -9,20 +9,34 @@ const CHUNK_LIMIT = 32000;
 
 export interface IBinaryPubSub extends IPubSub { };
 
+export enum BinaryPubSubMode {
+    Buffer,
+    Object
+}
+
 export class BinaryPubSub implements IBinaryPubSub {
     pubsub: IPubSub;
     channel: string;
 
+    mode: BinaryPubSubMode;
     incomingBinaries: any;
 
-    constructor(pubsub: IPubSub) {
+    constructor(pubsub: IPubSub, mode: BinaryPubSubMode) {
         this.pubsub = pubsub;
         this.incomingBinaries = {};
+        this.mode = mode;
     }
 
-    async publish(buffer: any): Promise<void> {
-        if (!(buffer instanceof Buffer)) {
+    async publish(message: any): Promise<void> {
+        if (this.mode === BinaryPubSubMode.Buffer && !(message instanceof Buffer)) {
             throw new Error('Buffer instance is required for BinaryPubSub');
+        }
+
+        let buffer;
+        if (this.mode === BinaryPubSubMode.Buffer) {
+            buffer = message;
+        } else {
+            buffer = new Buffer(JSON.stringify(message, null, 0), 'utf8');
         }
 
         console.log('Length:', buffer.length);
@@ -85,9 +99,16 @@ export class BinaryPubSub implements IBinaryPubSub {
 
                 let compressedBase64 = binary.join(''),
                     compressedBuffer = new Buffer(compressedBase64, 'base64'),
-                    buffer = zlib.unzipSync(compressedBuffer);
+                    buffer = zlib.unzipSync(compressedBuffer),
+                    response;
 
-                callback(buffer);
+                if (this.mode === BinaryPubSubMode.Buffer) {
+                    response = buffer;
+                } else {
+                    response = JSON.parse(buffer.toString('utf8'));
+                }
+
+                callback(response);
                 return;
             }
 
