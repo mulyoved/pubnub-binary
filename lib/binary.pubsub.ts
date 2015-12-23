@@ -49,7 +49,8 @@ export class BinaryPubSub implements IBinaryPubSub {
 
         let chunk = this.createChunk(),
             offset = 0,
-            chunkSize;
+            chunkSize,
+            chunkNumber = 0;
 
         while (offset <= compressedBase64.length) {
             chunkSize = CHUNK_DATA_LIMIT;
@@ -65,10 +66,13 @@ export class BinaryPubSub implements IBinaryPubSub {
                 chunk.t = 1;
             }
 
+            chunk.n = chunkNumber;
+
             // Publish each chunk synchronously
             await this.pubsub.publish(chunk);
 
             offset += chunkSize;
+            chunkNumber += 1;
         }
     }
 
@@ -84,29 +88,39 @@ export class BinaryPubSub implements IBinaryPubSub {
                 this.incomingBinaries[message.id] = [];
             }
 
-            if ('data' in message) {
-                // Next chunk
-                this.incomingBinaries[message.id].push(message.data);
+            if ('t' in message) {
+                this.incomingBinaries[message.id].terminating = true;
             }
 
-            if ('t' in message) {
-                // Termination flag has been received
-                let binary = this.incomingBinaries[message.id];
-                delete this.incomingBinaries[message.id];
+            if ('data' in message) {
+                // Next chunk
+                this.incomingBinaries[message.id][message.n] = message.data;
 
-                let compressedBase64 = binary.join(''),
-                    compressedBuffer = new Buffer(compressedBase64, 'base64'),
-                    buffer = zlib.unzipSync(compressedBuffer),
-                    response;
-
-                if (this.mode === BinaryPubSubMode.Buffer) {
-                    response = buffer;
-                } else {
-                    response = JSON.parse(buffer.toString('utf8'));
+                if (this.incomingBinaries[message.id].some((el) => (typeof el == 'undefined'))) {
+                    // If some parts of the message are still not received - return and wait for them
+                    // (even if termination flag is received)
+                    return;
                 }
 
-                callback(response);
-                return;
+                if (this.incomingBinaries[message.id].terminating) {
+                    // Termination flag has been received and all chunks are here
+                    let binary = this.incomingBinaries[message.id];
+                    delete this.incomingBinaries[message.id];
+
+                    let compressedBase64 = binary.join(''),
+                        compressedBuffer = new Buffer(compressedBase64, 'base64'),
+                        buffer = zlib.unzipSync(compressedBuffer),
+                        response;
+
+                    if (this.mode === BinaryPubSubMode.Buffer) {
+                        response = buffer;
+                    } else {
+                        response = JSON.parse(buffer.toString('utf8'));
+                    }
+
+                    callback(response);
+                    return;
+                }
             }
 
         });
@@ -119,7 +133,8 @@ export class BinaryPubSub implements IBinaryPubSub {
     private createChunk(): any {
         let emptyChunkMessage = {
             id: Date.now(),
-            data: ''
+            data: '',
+            n: 0
         };
         return emptyChunkMessage;
     }
