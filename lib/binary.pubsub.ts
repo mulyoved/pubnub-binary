@@ -9,6 +9,11 @@ const CHUNK_LIMIT = 32000;
 
 export interface IBinaryPubSub extends IPubSub { };
 
+/**
+ * Which mode will BinaryPubSub wrapper will use.
+ *  Buffer: messages objects in publish and subscribe functions are plain nodejs Buffers
+ *  Object: messages are plain JS objects
+ */
 export enum BinaryPubSubMode {
     Buffer,
     Object
@@ -39,18 +44,11 @@ export class BinaryPubSub implements IBinaryPubSub {
             buffer = new Buffer(JSON.stringify(message, null, 0), 'utf8');
         }
 
-        console.log('Length:', buffer.length);
-
         let compressedBuffer = zlib.gzipSync(buffer),
             compressedBase64 = compressedBuffer.toString('base64');
 
-        console.log('Compressed Base64 length:', compressedBase64.length);
-
-        let chunk = this.createChunk();
-
-        console.log('Empty chunk size:', this.getChunkSize(chunk));
-
-        let offset = 0,
+        let chunk = this.createChunk(),
+            offset = 0,
             chunkSize;
 
         while (offset <= compressedBase64.length) {
@@ -62,18 +60,16 @@ export class BinaryPubSub implements IBinaryPubSub {
                 chunk.data = compressedBase64.slice(offset, offset + chunkSize);
             } while (this.getChunkSize(chunk) >= CHUNK_LIMIT);
 
-            // console.log('New chunk offset:', offset, '. Size:', chunkSize);
+            if (offset + chunkSize > compressedBase64.length) {
+                // This is the last chunk, add termination flag
+                chunk.t = 1;
+            }
 
+            // Publish each chunk synchronously
             await this.pubsub.publish(chunk);
-            // console.log('Next chunk of size', chunk.data.length, 'is sent');
 
             offset += chunkSize;
         }
-
-        delete chunk.data;
-        await this.pubsub.publish(chunk);
-
-        console.log('Sent empty chunk');
     }
 
     subscribe(callback: SubscribeCallback): void {
@@ -91,9 +87,10 @@ export class BinaryPubSub implements IBinaryPubSub {
             if ('data' in message) {
                 // Next chunk
                 this.incomingBinaries[message.id].push(message.data);
-                return;
-            } else {
-                // Done receiving - handling
+            }
+
+            if ('t' in message) {
+                // Termination flag has been received
                 let binary = this.incomingBinaries[message.id];
                 delete this.incomingBinaries[message.id];
 
