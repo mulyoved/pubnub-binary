@@ -7,7 +7,7 @@ import {PubNubPubSub} from "./pubnub.pubsub";
 export interface IPubSub {
     channel: string;
 
-    publish(message: any): Promise<void>;
+    publish(message: any): Promise<any>;
     subscribe(callback: SubscribeCallback): void;
     unsubscribe();
 }
