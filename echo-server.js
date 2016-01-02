@@ -33,7 +33,7 @@ setTimeout(() => {
                 console.error('Echo+MSG Unexpected answer', m, message);
             }
             else {
-                console.info(util.format('%s Echo+MSG %s send #%s', (new Date()).toISOString(), message.uuid, message._msgId));
+                console.info(util.format('%s Echo+MSG: %s send #%s', (new Date()).toISOString(), message.uuid, message._msgId));
             }
         })
             .catch((e) => console.log('Echo+Error sending message: ', e));

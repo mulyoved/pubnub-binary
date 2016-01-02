@@ -39,8 +39,8 @@ async function pause(delay) {
     });
 }
 
-function generate_uuid() {
-    var u = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,
+function generate_short_id() {
+    var u = 'xxxxx'.replace(/[xy]/g,
         function(c) {
             var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
             return v.toString(16);
@@ -50,7 +50,7 @@ function generate_uuid() {
 
 
 async function runTest() {
-    let uuid = generate_uuid();
+    let uuid = generate_short_id();
     for (let i=0; i<10; i++) {
         await pause(5000);
         let message = {
