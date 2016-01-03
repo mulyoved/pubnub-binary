@@ -12,6 +12,8 @@ var pubSubSetup = require('./config').pubSubSetup;
 let pubsub_recv : IPubSub = createPubSub(pubSubSetup, console, pubSubSetup.room_send);
 let pubsub_send : IPubSub = createPubSub(pubSubSetup, console, pubSubSetup.room_recv);
 
+let uuid = generate_short_id();
+let idSent = [];
 
 
 setTimeout(() => {
@@ -21,7 +23,16 @@ setTimeout(() => {
     pubsub_recv.subscribe((message) => {
         // Message will be a buffer if BinaryPubSubMode is set to Buffer
         let delay = (new Date()).getTime() - message.time;
-        console.log(util.format('%s Client+MSG: %s recv #%s delay:%s', (new Date()).toISOString(), message.uuid, message._msgId, delay));
+        console.log(util.format('%s Client+MSG: %s recv #%s delay:%s - %s', (new Date()).toISOString(), message.uuid, message._msgId, delay, idSent));
+
+        if (idSentidSent[0] !== message._msgId ||
+            message.uuid != uuid) {
+
+            console.error(util.format('%s Client+MSG: %s recv #%s != %s Unexpected message Id', (new Date()).toISOString(), message.uuid, message._msgId, idSent[0]));
+        } else {
+            idSent.shift();
+        }
+
     });
 
     runTest()
@@ -49,18 +60,31 @@ function generate_short_id() {
 }
 
 
-async function runTest() {
-    let uuid = generate_short_id();
-    for (let i=0; i<10; i++) {
-        await pause(5000);
-        let message = {
-            time: (new Date()).getTime(),
-            uuid: uuid,
-            _msgId: i,
-            msgType: 'ping',
-        };
+async function sendPing(i) {
+    let message = {
+        time: (new Date()).getTime(),
+        uuid: uuid,
+        _msgId: i,
+        msgType: 'ping',
+    };
 
-        console.log('%s Client+MSG: %s send #%s', (new Date()).toISOString(), message.uuid, message._msgId);
-        await pubsub_send.publish(message);
+    console.log('%s Client+MSG: %s send #%s', (new Date()).toISOString(), message.uuid, message._msgId);
+    idSent.push(i);
+    await pubsub_send.publish(message);
+    return message;
+}
+
+async function runTest() {
+    for (let j=0; j<10; j++) {
+        for (let i = 0; i < 10; i++) {
+            let msgId = j * 1000 + i * 2;
+            await pause(2000);
+            var message = sendPing(msgId);
+            var message = sendPing(msgId + 1);
+            //var message = sendPing(msgId + 2);
+            //var message = sendPing(msgId + 3);
+        }
+        console.log('Paue 3 min before next batch');
+        await pause(3 * 60000);
     }
 }
