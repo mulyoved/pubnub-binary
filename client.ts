@@ -25,10 +25,11 @@ setTimeout(() => {
         let delay = (new Date()).getTime() - message.time;
         console.log(util.format('%s Client+MSG: %s recv #%s delay:%s - %s', (new Date()).toISOString(), message.uuid, message._msgId, delay, idSent));
 
-        if (idSentidSent[0] !== message._msgId ||
+        if (idSent.length === 0 ||
+            idSent[0] !== message._msgId ||
             message.uuid != uuid) {
 
-            console.error(util.format('%s Client+MSG: %s recv #%s != %s Unexpected message Id', (new Date()).toISOString(), message.uuid, message._msgId, idSent[0]));
+            console.error(util.format('%s Client+MSG: %s recv #%s != %s Unexpected message Id, ', (new Date()).toISOString(), message.uuid, message._msgId, idSent[0], idSent));
         } else {
             idSent.shift();
         }
