@@ -2,7 +2,6 @@
 "use strict";
 
 import {createPubSub, IPubSub} from './lib/ipubsub';
-import {BinaryPubSub, BinaryPubSubMode} from './lib/binary.pubsub';
 import fs = require('fs');
 import * as util from 'util';
 
@@ -85,7 +84,7 @@ async function runTest() {
             //var message = sendPing(msgId + 2);
             //var message = sendPing(msgId + 3);
         }
-        console.log('Paue 3 min before next batch');
+        console.log('Pause 3 min before next batch');
         await pause(3 * 60000);
     }
 }

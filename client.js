@@ -28,9 +28,10 @@ setTimeout(() => {
         // Message will be a buffer if BinaryPubSubMode is set to Buffer
         let delay = (new Date()).getTime() - message.time;
         console.log(util.format('%s Client+MSG: %s recv #%s delay:%s - %s', (new Date()).toISOString(), message.uuid, message._msgId, delay, idSent));
-        if (idSent[0] !== message._msgId ||
+        if (idSent.length === 0 ||
+            idSent[0] !== message._msgId ||
             message.uuid != uuid) {
-            console.error(util.format('%s Client+MSG: %s recv #%s != %s Unexpected message Id', (new Date()).toISOString(), message.uuid, message._msgId, idSent[0]));
+            console.error(util.format('%s Client+MSG: %s recv #%s != %s Unexpected message Id, ', (new Date()).toISOString(), message.uuid, message._msgId, idSent[0], idSent));
         }
         else {
             idSent.shift();
@@ -79,7 +80,7 @@ function runTest() {
                 var message = sendPing(msgId);
                 var message = sendPing(msgId + 1);
             }
-            console.log('Paue 3 min before next batch');
+            console.log('Pause 3 min before next batch');
             yield pause(3 * 60000);
         }
     });
